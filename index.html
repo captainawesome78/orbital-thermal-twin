@@ -11,7 +11,11 @@
     --warn:#ffb84d; --bad:#ff6b6b; --good:#4ade80;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;padding:24px;max-width:1200px;margin:0 auto}
+  body{background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;padding:20px 24px 32px;max-width:1200px;margin:0 auto}
+  nav{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:20px;padding-bottom:0}
+  nav a{color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;padding:9px 15px;border-radius:8px 8px 0 0;border:1px solid transparent;border-bottom:none;position:relative;top:1px}
+  nav a:hover{color:var(--txt)}
+  nav a.active{color:var(--accent);background:var(--panel);border-color:var(--line)}
   h1{font-size:22px;font-weight:650;letter-spacing:-.2px}
   h1 .sub{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-top:4px}
   .grid{display:grid;grid-template-columns:340px 1fr;gap:20px;margin-top:20px}
@@ -46,6 +50,11 @@
 </style>
 </head>
 <body>
+  <nav>
+    <a href="index.html" class="active">Thermal Twin</a>
+    <a href="planner.html">Feasibility Planner</a>
+  </nav>
+
   <h1>Orbital Compute Thermal Digital Twin
     <span class="sub">In vacuum, heat leaves only by radiation. This models whether your compute payload can shed its own waste heat — the real bottleneck for space data centers.</span>
   </h1>

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orbital Inference Feasibility Planner</title>
+<style>
+  :root{
+    --bg:#0a0e1a; --panel:#121829; --panel2:#0f1422; --line:#233047;
+    --txt:#e6edf7; --muted:#8b9ab5; --accent:#4da3ff; --accent2:#6ee7b7;
+    --warn:#ffb84d; --bad:#ff6b6b; --good:#4ade80; --purple:#a78bfa;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;padding:20px 24px 32px;max-width:1200px;margin:0 auto}
+  nav{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:20px;padding-bottom:0}
+  nav a{color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;padding:9px 15px;border-radius:8px 8px 0 0;border:1px solid transparent;border-bottom:none;position:relative;top:1px}
+  nav a:hover{color:var(--txt)}
+  nav a.active{color:var(--accent);background:var(--panel);border-color:var(--line)}
+  h1{font-size:22px;font-weight:650;letter-spacing:-.2px}
+  h1 .sub{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-top:4px}
+  .grid{display:grid;grid-template-columns:340px 1fr;gap:20px;margin-top:20px}
+  @media(max-width:860px){.grid{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .panel h2{font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:14px;font-weight:600}
+  .panel h2:not(:first-child){margin-top:20px}
+  .field{margin-bottom:15px}
+  .field label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;gap:8px}
+  .field label b{color:var(--accent);font-variant-numeric:tabular-nums;white-space:nowrap}
+  input[type=range]{width:100%;accent-color:var(--accent);height:4px}
+  select{width:100%;background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:8px;font-size:13px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .verdict{border-radius:12px;padding:15px 17px;font-size:14px;margin-bottom:16px;border:1px solid}
+  .verdict .tag{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;padding:3px 9px;border-radius:20px;margin-bottom:8px}
+  .v-good{background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.4)}
+  .v-good .tag{background:var(--good);color:#04220f}
+  .v-power{background:rgba(255,184,77,.08);border-color:rgba(255,184,77,.45)}
+  .v-power .tag{background:var(--warn);color:#2a1a00}
+  .v-thermal{background:rgba(255,107,107,.08);border-color:rgba(255,107,107,.45)}
+  .v-thermal .tag{background:var(--bad);color:#2a0000}
+  .v-downlink{background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.45)}
+  .v-downlink .tag{background:var(--purple);color:#1a0a33}
+  .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:16px}
+  @media(max-width:600px){.metrics{grid-template-columns:1fr 1fr}}
+  .metric{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:12px 13px}
+  .metric .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+  .metric .v{font-size:20px;font-weight:650;font-variant-numeric:tabular-nums;margin-top:3px}
+  .metric .u{font-size:11.5px;color:var(--muted);font-weight:400}
+  .bars{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+  .bars h3{font-size:12px;color:var(--muted);font-weight:600;margin-bottom:4px}
+  .bars .hint{font-size:11.5px;color:var(--muted);margin-bottom:14px}
+  .bar{margin-bottom:14px}
+  .bar:last-child{margin-bottom:0}
+  .bar .top{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px}
+  .bar .top .nm{font-weight:600}
+  .bar .top .mg{font-variant-numeric:tabular-nums;color:var(--muted)}
+  .track{height:22px;background:#0a0f1c;border:1px solid var(--line);border-radius:6px;overflow:hidden;position:relative}
+  .fill{height:100%;transition:width .18s ease;border-radius:5px 0 0 5px}
+  .track .mark{position:absolute;left:50%;top:0;bottom:0;width:2px;background:rgba(255,255,255,.32)}
+  .track .marklabel{position:absolute;left:calc(50% + 6px);top:2px;font-size:10px;color:var(--muted)}
+  .flow{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+  .flow h3{font-size:12px;color:var(--muted);font-weight:600;margin-bottom:12px}
+  .fl{display:flex;align-items:center;gap:10px;font-size:12.5px;flex-wrap:wrap}
+  .box{background:#0a0f1c;border:1px solid var(--line);border-radius:8px;padding:9px 13px;text-align:center;min-width:104px}
+  .box .n{font-size:16px;font-weight:650;font-variant-numeric:tabular-nums;display:block}
+  .box .l{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  .arrow{color:var(--muted);font-size:16px}
+  .arrow small{display:block;font-size:10px;text-align:center}
+  .note{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
+  .note code{background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:11px}
+  .presetbar{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
+  .presetbar button{background:var(--panel2);color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:6px 13px;font-size:12px;cursor:pointer;font-family:inherit}
+  .presetbar button:hover{color:var(--txt);border-color:var(--accent)}
+</style>
+</head>
+<body>
+  <nav>
+    <a href="index.html">Thermal Twin</a>
+    <a href="planner.html" class="active">Feasibility Planner</a>
+  </nav>
+
+  <h1>Orbital Inference Feasibility Planner
+    <span class="sub">Power, heat rejection and downlink all have to close at once. This finds the one that's actually stopping you.</span>
+  </h1>
+
+  <div class="presetbar">
+    <span style="font-size:12px;color:var(--muted);align-self:center;margin-right:2px">Scenarios:</span>
+    <button data-p="sar">SAR + onboard AI</button>
+    <button data-p="raw">SAR, raw downlink</button>
+    <button data-p="llm">Orbital LLM serving</button>
+    <button data-p="cube">Cubesat video</button>
+  </div>
+
+  <div class="grid">
+    <!-- CONTROLS -->
+    <div class="panel">
+      <h2>Sensor / demand</h2>
+      <div class="field">
+        <label for="mode">Workload driven by</label>
+        <select id="mode">
+          <option value="sensor">An instrument producing data</option>
+          <option value="demand">A served request rate</option>
+        </select>
+      </div>
+      <div class="field" id="fSensor">
+        <label>Data generated <b><span id="genV"></span> GB/day</b></label>
+        <input type="range" id="gen" min="10" max="20000" step="10" value="1728">
+      </div>
+      <div class="field" id="fDemand" style="display:none">
+        <label>Inferences <b><span id="demV"></span> /day</b></label>
+        <input type="range" id="dem" min="6" max="12" step="0.05" value="11.3">
+      </div>
+
+      <h2>Model &amp; hardware</h2>
+      <div class="field">
+        <label for="wl">Workload</label>
+        <select id="wl">
+          <option value="8">ResNet-50 — 8 GOPs</option>
+          <option value="35">ViT-B/16 — 35 GOPs</option>
+          <option value="80">YOLOv8-m — 80 GOPs</option>
+          <option value="200" selected>SAR segmenter — 200 GOPs</option>
+          <option value="2">LLM 1B — 2 GOPs/token</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Input <b><span id="inV"></span> MB</b></label>
+          <input type="range" id="inmb" min="0.002" max="2000" step="0.002" value="800">
+        </div>
+        <div class="field">
+          <label>Output <b><span id="outV"></span> MB</b></label>
+          <input type="range" id="outmb" min="0.001" max="2000" step="0.001" value="2">
+        </div>
+      </div>
+      <div class="field">
+        <label for="acc">Accelerator</label>
+        <select id="acc">
+          <option value="100|25">Jetson Orin NX — 100 TOPS @ 25 W</option>
+          <option value="275|60" selected>Jetson AGX Orin — 275 TOPS @ 60 W</option>
+          <option value="485|72">NVIDIA L4 — 485 TOPS @ 72 W</option>
+          <option value="1979|700">NVIDIA H100 — 1979 TOPS @ 700 W</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Achievable utilisation <b><span id="utilV"></span>%</b></label>
+        <input type="range" id="util" min="10" max="90" step="1" value="40">
+      </div>
+
+      <h2>Spacecraft</h2>
+      <div class="field">
+        <label>Solar array <b><span id="arrV"></span> m²</b></label>
+        <input type="range" id="arr" min="0.1" max="60" step="0.1" value="8">
+      </div>
+      <div class="field">
+        <label>Radiator <b><span id="radV"></span> m²</b></label>
+        <input type="range" id="rad" min="0.1" max="30" step="0.1" value="2">
+      </div>
+      <div class="field">
+        <label>Altitude <b><span id="altV"></span> km</b></label>
+        <input type="range" id="alt" min="400" max="1200" step="10" value="550">
+      </div>
+
+      <h2>Ground link</h2>
+      <div class="field">
+        <label for="band">Band</label>
+        <select id="band">
+          <option value="10e6">S-band — 10 Mbps</option>
+          <option value="300e6" selected>X-band — 300 Mbps</option>
+          <option value="1.2e9">Ka-band — 1.2 Gbps</option>
+          <option value="10e9">Optical — 10 Gbps</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Passes <b><span id="passV"></span>/day</b></label>
+          <input type="range" id="pass" min="1" max="30" step="1" value="5">
+        </div>
+        <div class="field">
+          <label>Contact <b><span id="conV"></span> min</b></label>
+          <input type="range" id="con" min="2" max="30" step="1" value="8">
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div>
+      <div class="panel">
+        <h2>Verdict</h2>
+        <div id="verdict" class="verdict"></div>
+        <div class="metrics">
+          <div class="metric"><div class="k">Sustained compute</div><div class="v"><span id="mSus"></span></div></div>
+          <div class="metric"><div class="k">Compute needed</div><div class="v"><span id="mNeed"></span></div></div>
+          <div class="metric"><div class="k">Energy / inference</div><div class="v"><span id="mE"></span></div></div>
+          <div class="metric"><div class="k">Inferences / day</div><div class="v"><span id="mInf"></span></div></div>
+          <div class="metric"><div class="k">Accelerators</div><div class="v"><span id="mUnits"></span><span class="u"> ×</span></div></div>
+          <div class="metric"><div class="k">Data reduction</div><div class="v"><span id="mRed"></span><span class="u"> ×</span></div></div>
+        </div>
+
+        <div class="bars">
+          <h3>The three budgets</h3>
+          <div class="hint">Each bar is capacity ÷ requirement. Anything left of the 1.0× line fails.</div>
+          <div class="bar" id="bPower"></div>
+          <div class="bar" id="bThermal"></div>
+          <div class="bar" id="bLink"></div>
+        </div>
+
+        <div class="flow">
+          <h3>Data path</h3>
+          <div class="fl">
+            <div class="box"><span class="n" id="fGen"></span><span class="l">GB/day sensed</span></div>
+            <div class="arrow">→<small id="fRed"></small></div>
+            <div class="box"><span class="n" id="fOut"></span><span class="l">GB/day to send</span></div>
+            <div class="arrow">vs</div>
+            <div class="box"><span class="n" id="fCap"></span><span class="l">GB/day capacity</span></div>
+          </div>
+        </div>
+
+        <div class="note" id="note"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ---- constants (mirror orbitplan.constants) ----
+const SIGMA=5.670374419e-8, S=1361, ALBEDO=0.30, EIR=237,
+      MU=3.986004418e14, RE=6.371e6,
+      CELL_EFF=0.30, PACKING=0.85, BATT=0.85, PMAD=0.90, BUS_W=30,
+      EPS=0.85, ALPHA=0.20, RAD_T_C=50, LINK_EFF=0.80;
+const $=id=>document.getElementById(id);
+
+// ---- physics (mirror orbitplan.budgets / workload / planner) ----
+function orbit(altkm){
+  const a=RE+altkm*1000;
+  return {period:2*Math.PI*Math.sqrt(a*a*a/MU), ecl:(2*Math.asin(RE/a))/(2*Math.PI)};
+}
+function powerCompute(areaM2, ecl){
+  const peak=S*CELL_EFF*PACKING*areaM2;
+  const sun=1-ecl;
+  const avg=(peak*sun*sun + peak*sun*ecl*BATT)*PMAD;
+  return {peak, avg, compute:Math.max(avg-BUS_W,0)};
+}
+function thermalMax(areaM2){
+  // deep-space orientation: small residual Earth IR
+  const env=EPS*EIR*0.05;
+  const net=EPS*SIGMA*Math.pow(RAD_T_C+273.15,4)-env;
+  return Math.max(net,0)*areaM2;
+}
+function linkCap(rate,contactMin,passes){
+  return rate*contactMin*60*passes*LINK_EFF/8/1e9;   // GB/day
+}
+function fmtW(x){
+  if(!isFinite(x))return '∞';
+  if(x<1) return (x*1000).toFixed(1)+' mW';
+  if(x>=1000) return (x/1000).toFixed(2)+' kW';
+  return Math.round(x).toLocaleString()+' W';
+}
+function fmtX(v){
+  if(!isFinite(v))return '∞';
+  if(v>=1000)return Math.round(v).toLocaleString()+'×';
+  if(v>=10)return v.toFixed(0)+'×';
+  return v.toFixed(2)+'×';
+}
+function fmtN(v,d=0){
+  if(!isFinite(v))return '∞';
+  if(v>=1e9)return (v/1e9).toFixed(1)+'B';
+  if(v>=1e6)return (v/1e6).toFixed(1)+'M';
+  if(v>=1e3)return (v/1e3).toFixed(1)+'k';
+  return v.toLocaleString(undefined,{maximumFractionDigits:d});
+}
+function fmtGB(v){
+  if(!isFinite(v))return '∞';
+  if(v>=1e6)return (v/1e6).toFixed(1)+'M';
+  if(v>=1000)return (v/1000).toFixed(1)+'k';
+  if(v<0.01&&v>0)return v.toExponential(1);
+  return v.toLocaleString(undefined,{maximumFractionDigits:2});
+}
+
+function bar(el,name,margin,color,binding){
+  // log-ish scale: 1.0x sits at 50% of the track
+  let pct;
+  if(!isFinite(margin)) pct=100;
+  else if(margin<=0) pct=0;
+  else pct=Math.max(2,Math.min(100, 50+50*Math.log10(Math.min(margin,1000))/2 ));
+  const ok=margin>=1;
+  el.innerHTML=`<div class="top"><span class="nm" style="color:${ok?'var(--txt)':color}">${name}${binding?' — binding':''}</span>`
+    +`<span class="mg">${fmtX(margin)}</span></div>`
+    +`<div class="track"><div class="fill" style="width:${pct}%;background:${ok?color:color};opacity:${ok?0.85:1}"></div>`
+    +`<div class="mark"></div><div class="marklabel">1.0×</div></div>`;
+}
+
+function compute(){
+  const mode=$('mode').value;
+  const gops=+$('wl').value, inmb=+$('inmb').value, outmb=+$('outmb').value;
+  const [tops,watts]=$('acc').value.split('|').map(Number);
+  const util=+$('util').value/100;
+  const arr=+$('arr').value, radA=+$('rad').value, alt=+$('alt').value;
+  const rate=+$('band').value, passes=+$('pass').value, con=+$('con').value;
+
+  // label sync
+  $('genV').textContent=(+$('gen').value).toLocaleString();
+  $('demV').textContent=fmtN(Math.pow(10,+$('dem').value));
+  $('inV').textContent=inmb>=1?inmb.toLocaleString():inmb.toFixed(3);
+  $('outV').textContent=outmb>=1?outmb.toLocaleString():outmb.toFixed(3);
+  $('utilV').textContent=Math.round(util*100);
+  $('arrV').textContent=arr.toFixed(1); $('radV').textContent=radA.toFixed(1);
+  $('altV').textContent=alt; $('passV').textContent=passes; $('conV').textContent=con;
+  $('fSensor').style.display = mode==='sensor'?'':'none';
+  $('fDemand').style.display = mode==='demand'?'':'none';
+
+  const ob=orbit(alt);
+  const pw=powerCompute(arr,ob.ecl);
+  const pThermal=thermalMax(radA);
+  const sustained=Math.min(pw.compute,pThermal);
+  const headroom = pThermal<pw.compute ? 'thermal' : 'power';
+
+  // demand
+  let required, genGB;
+  if(mode==='demand'){ required=Math.pow(10,+$('dem').value); genGB=required*inmb/1000; }
+  else { genGB=+$('gen').value; required=genGB*1000/inmb; }
+
+  // energy
+  const opsPerJ=tops*1e12*util/watts;
+  const eInf=gops*1e9/opsPerJ;
+  const needW=required*eInf/86400;
+  const capacity=sustained*86400/eInf;
+  const margin=required>0?capacity/required:Infinity;
+  const latency=gops*1e9/(tops*1e12*util);
+  const units=required*latency/86400;
+
+  // data
+  const proc=Math.min(margin,1);
+  const outGB=required*proc*outmb/1000 + genGB*(1-proc);
+  const capGB=linkCap(rate,con,passes);
+  const linkMargin=outGB>0?capGB/outGB:Infinity;
+  const reduction=outmb>0?inmb/outmb:Infinity;
+
+  // separate power / thermal margins for the bars
+  const mPower = needW>0 ? pw.compute/needW : Infinity;
+  const mTherm = needW>0 ? pThermal/needW : Infinity;
+
+  // ---- verdict ----
+  const v=$('verdict');
+  let bottleneck;
+  if(margin<1){
+    bottleneck=headroom;
+    const fix = headroom==='thermal' ? 'radiator area' : 'solar array';
+    v.className='verdict v-'+headroom;
+    v.innerHTML=`<span class="tag">${headroom}-bound</span><br>`
+      +`Processing needs <b>${fmtW(needW)}</b> continuously but only <b>${fmtW(sustained)}</b> is available — short <b>${fmtX(1/margin)}</b>. `
+      +`Grow the ${fix}, choose a leaner model, or cut the duty cycle.`;
+  } else if(linkMargin<1){
+    bottleneck='downlink';
+    v.className='verdict v-downlink';
+    v.innerHTML=`<span class="tag">downlink-bound</span><br>`
+      +`Compute keeps up, but <b>${fmtGB(outGB)} GB/day</b> still has to reach the ground against <b>${fmtGB(capGB)} GB/day</b> of capacity — `
+      +`cut output <b>${fmtX(1/linkMargin)}</b> further, add passes, or move to a faster band.`;
+  } else {
+    bottleneck='none';
+    v.className='verdict v-good';
+    v.innerHTML=`<span class="tag">feasible</span><br>`
+      +`<b>${fmtN(required)}</b> inferences/day fit inside <b>${fmtW(needW)}</b> of a <b>${fmtW(sustained)}</b> envelope, and onboard processing takes `
+      +`<b>${fmtGB(genGB)} GB/day</b> down to <b>${fmtGB(outGB)} GB/day</b> — inside the <b>${fmtGB(capGB)} GB/day</b> link.`;
+  }
+
+  // ---- metrics ----
+  $('mSus').textContent=fmtW(sustained);
+  $('mNeed').textContent=fmtW(needW);
+  $('mE').textContent=(eInf*1000).toFixed(2)+' mJ';
+  $('mInf').textContent=fmtN(required);
+  $('mUnits').textContent=units<0.01?'<0.01':fmtN(units,2);
+  $('mRed').textContent=fmtX(reduction).replace('×','');
+
+  // ---- bars ----
+  bar($('bPower'),'Power',mPower,'var(--warn)',bottleneck==='power');
+  bar($('bThermal'),'Thermal',mTherm,'var(--bad)',bottleneck==='thermal');
+  bar($('bLink'),'Downlink',linkMargin,'var(--purple)',bottleneck==='downlink');
+
+  // ---- flow ----
+  $('fGen').textContent=fmtGB(genGB);
+  $('fOut').textContent=fmtGB(outGB);
+  $('fCap').textContent=fmtGB(capGB);
+  $('fRed').textContent=isFinite(reduction)?fmtX(reduction):'';
+
+  // ---- note ----
+  $('note').innerHTML=`Orbit ${alt} km → period ${(ob.period/60).toFixed(1)} min, eclipse ${(ob.ecl*100).toFixed(0)}%. `
+    +`Array ${arr.toFixed(1)} m² → ${fmtW(pw.peak)} peak, ${fmtW(pw.compute)} to compute after eclipse, battery and bus losses. `
+    +`Radiator ${radA.toFixed(1)} m² sheds ${fmtW(pThermal)} at ${RAD_T_C} °C. `
+    +`Link ${passes}×${con} min at ${(rate/1e6).toFixed(0)} Mbps → ${fmtGB(capGB)} GB/day. `
+    +`Energy per inference assumes ${Math.round(util*100)}% of peak TOPS is achieved — the figure most orbital estimates get wrong. `
+    +`Mirrors the <code>orbitplan</code> Python package; first-order triage, not flight design.`;
+}
+
+// ---- scenarios ----
+const SCEN={
+  sar:  {mode:'sensor',gen:1728,wl:'200',inmb:800,outmb:2,acc:'275|60',arr:8,rad:2,band:'300e6',pass:5,con:8},
+  raw:  {mode:'sensor',gen:1728,wl:'200',inmb:800,outmb:800,acc:'275|60',arr:8,rad:2,band:'300e6',pass:5,con:8},
+  llm:  {mode:'demand',dem:11.3,wl:'2',inmb:0.002,outmb:0.002,acc:'1979|700',arr:40,rad:1.5,band:'10e9',pass:5,con:8},
+  cube: {mode:'sensor',gen:9000,wl:'80',inmb:6,outmb:0.01,acc:'100|25',arr:0.25,rad:2,band:'300e6',pass:5,con:8},
+};
+document.querySelectorAll('.presetbar button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    const s=SCEN[b.dataset.p]; if(!s)return;
+    for(const k in s){
+      const el=$(k==='gen'?'gen':k==='dem'?'dem':k);
+      if(el) el.value=s[k];
+    }
+    compute();
+  });
+});
+
+['mode','gen','dem','wl','inmb','outmb','acc','util','arr','rad','alt','band','pass','con']
+  .forEach(i=>{const el=$(i); if(el){el.addEventListener('input',compute); el.addEventListener('change',compute);}});
+compute();
+</script>
+</body>
+</html>
