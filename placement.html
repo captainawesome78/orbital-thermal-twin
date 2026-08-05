@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orbit or Ground? — Placement Economics</title>
+<style>
+  :root{
+    --bg:#0a0e1a; --panel:#121829; --panel2:#0f1422; --line:#233047;
+    --txt:#e6edf7; --muted:#8b9ab5; --accent:#4da3ff; --accent2:#6ee7b7;
+    --warn:#ffb84d; --bad:#ff6b6b; --good:#4ade80; --purple:#a78bfa;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;padding:20px 24px 32px;max-width:1200px;margin:0 auto}
+  nav{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:20px}
+  nav a{color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;padding:9px 15px;border-radius:8px 8px 0 0;border:1px solid transparent;border-bottom:none;position:relative;top:1px}
+  nav a:hover{color:var(--txt)}
+  nav a.active{color:var(--accent);background:var(--panel);border-color:var(--line)}
+  h1{font-size:22px;font-weight:650;letter-spacing:-.2px}
+  h1 .sub{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-top:4px}
+  .grid{display:grid;grid-template-columns:340px 1fr;gap:20px;margin-top:20px}
+  @media(max-width:860px){.grid{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .panel h2{font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:14px;font-weight:600}
+  .panel h2:not(:first-child){margin-top:20px}
+  .field{margin-bottom:15px}
+  .field label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;gap:8px}
+  .field label b{color:var(--accent);font-variant-numeric:tabular-nums;white-space:nowrap}
+  input[type=range]{width:100%;accent-color:var(--accent);height:4px}
+  select{width:100%;background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:8px;font-size:13px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .verdict{border-radius:12px;padding:15px 17px;font-size:14px;margin-bottom:16px;border:1px solid}
+  .verdict .tag{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;padding:3px 9px;border-radius:20px;margin-bottom:8px}
+  .v-orbit{background:rgba(110,231,183,.08);border-color:rgba(110,231,183,.45)}
+  .v-orbit .tag{background:var(--accent2);color:#04241a}
+  .v-ground{background:rgba(77,163,255,.08);border-color:rgba(77,163,255,.45)}
+  .v-ground .tag{background:var(--accent);color:#04122b}
+  .v-impossible{background:rgba(255,107,107,.09);border-color:rgba(255,107,107,.5)}
+  .v-impossible .tag{background:var(--bad);color:#2a0000}
+  .v-forced{background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.45)}
+  .v-forced .tag{background:var(--purple);color:#1a0a33}
+  .vs{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+  @media(max-width:640px){.vs{grid-template-columns:1fr}}
+  .side{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:15px}
+  .side.win{border-color:rgba(110,231,183,.5);box-shadow:0 0 0 1px rgba(110,231,183,.15)}
+  .side h3{font-size:12px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:3px;display:flex;justify-content:space-between;align-items:center}
+  .side h3 .pill{font-size:10px;padding:2px 7px;border-radius:12px;background:var(--accent2);color:#04241a;font-weight:700;letter-spacing:.3px}
+  .side .tot{font-size:27px;font-weight:650;font-variant-numeric:tabular-nums;margin:6px 0 10px}
+  .side .tot small{font-size:13px;color:var(--muted);font-weight:400}
+  .line{display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;border-top:1px solid var(--line)}
+  .line span:last-child{font-variant-numeric:tabular-nums}
+  .line.bad span{color:var(--bad)}
+  .cross{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+  .cross h3{font-size:12px;color:var(--muted);font-weight:600;margin-bottom:4px}
+  .cross .hint{font-size:11.5px;color:var(--muted);margin-bottom:14px}
+  canvas{width:100%;display:block}
+  .legend{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-top:9px;flex-wrap:wrap}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+  .note{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
+  .note code{background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:11px}
+  .presetbar{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
+  .presetbar button{background:var(--panel2);color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:6px 13px;font-size:12px;cursor:pointer;font-family:inherit}
+  .presetbar button:hover{color:var(--txt);border-color:var(--accent)}
+  .chk{display:flex;align-items:center;gap:8px;font-size:13px;margin-top:4px}
+  .chk input{accent-color:var(--purple);width:15px;height:15px}
+</style>
+</head>
+<body>
+  <nav>
+    <a href="index.html">Thermal Twin</a>
+    <a href="planner.html">Feasibility Planner</a>
+    <a href="placement.html" class="active">Orbit or Ground?</a>
+  </nav>
+
+  <h1>Orbit or Ground?
+    <span class="sub">The planner asks whether it <em>can</em> run in orbit. This asks whether it <em>should</em> — against downlinking everything and using a terrestrial cloud.</span>
+  </h1>
+
+  <div class="presetbar">
+    <span style="font-size:12px;color:var(--muted);align-self:center;margin-right:2px">Scenarios:</span>
+    <button data-p="sar">SAR satellite</button>
+    <button data-p="cube">Low-volume cubesat</button>
+    <button data-p="sov">Sovereign data</button>
+    <button data-p="video">Video constellation</button>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>Workload</h2>
+      <div class="field">
+        <label>Data generated <b><span id="genV"></span> GB/day</b></label>
+        <input type="range" id="gen" min="0.5" max="5000" step="0.5" value="1728">
+      </div>
+      <div class="field">
+        <label for="wl">Model</label>
+        <select id="wl">
+          <option value="8">ResNet-50 — 8 GOPs</option>
+          <option value="35">ViT-B/16 — 35 GOPs</option>
+          <option value="80">YOLOv8-m — 80 GOPs</option>
+          <option value="200" selected>SAR segmenter — 200 GOPs</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Input <b><span id="inV"></span> MB</b></label>
+          <input type="range" id="inmb" min="0.5" max="2000" step="0.5" value="800">
+        </div>
+        <div class="field">
+          <label>Output <b><span id="outV"></span> MB</b></label>
+          <input type="range" id="outmb" min="0.001" max="200" step="0.001" value="2">
+        </div>
+      </div>
+
+      <h2>Ground link</h2>
+      <div class="field">
+        <label for="band">Band</label>
+        <select id="band">
+          <option value="10e6">S-band — 10 Mbps</option>
+          <option value="300e6" selected>X-band — 300 Mbps</option>
+          <option value="1.2e9">Ka-band — 1.2 Gbps</option>
+          <option value="10e9">Optical — 10 Gbps</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Passes <b><span id="passV"></span>/day</b></label>
+          <input type="range" id="pass" min="1" max="40" step="1" value="5">
+        </div>
+        <div class="field">
+          <label>Contact <b><span id="conV"></span> min</b></label>
+          <input type="range" id="con" min="2" max="30" step="1" value="8">
+        </div>
+      </div>
+      <div class="field">
+        <label>Station cost <b>$<span id="gsV"></span>/min</b></label>
+        <input type="range" id="gs" min="1" max="30" step="0.5" value="10">
+      </div>
+
+      <h2>Orbit payload</h2>
+      <div class="field">
+        <label>Payload mass <b><span id="massV"></span> kg</b></label>
+        <input type="range" id="mass" min="1" max="300" step="1" value="25">
+      </div>
+      <div class="field">
+        <label>Hardware cost <b>$<span id="hwV"></span>k</b></label>
+        <input type="range" id="hw" min="5" max="500" step="5" value="40">
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Launch <b>$<span id="lcV"></span>/kg</b></label>
+          <input type="range" id="lc" min="150" max="3000" step="50" value="1000">
+        </div>
+        <div class="field">
+          <label>Mission <b><span id="yrV"></span> yr</b></label>
+          <input type="range" id="yr" min="1" max="15" step="1" value="5">
+        </div>
+      </div>
+
+      <h2>Cloud baseline</h2>
+      <div class="field">
+        <label>GPU cost <b>$<span id="gpuV"></span>/hr</b></label>
+        <input type="range" id="gpu" min="0.1" max="10" step="0.01" value="1.006">
+      </div>
+      <label class="chk">
+        <input type="checkbox" id="sov">
+        <span>Raw data may not leave the spacecraft</span>
+      </label>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h2>Verdict</h2>
+        <div id="verdict" class="verdict"></div>
+
+        <div class="vs">
+          <div class="side" id="sideGround">
+            <h3>Ground <span class="pill" id="pillG" style="display:none">cheaper</span></h3>
+            <div class="tot">$<span id="gTot"></span><small>/day</small></div>
+            <div class="line"><span>Ground-station minutes</span><span>$<span id="gStation"></span></span></div>
+            <div class="line"><span>Cloud GPU</span><span>$<span id="gCloud"></span></span></div>
+            <div class="line" id="gHoursLine"><span>Contact needed</span><span><span id="gHours"></span> h</span></div>
+            <div class="line"><span>Contact available</span><span><span id="gAvail"></span> h</span></div>
+          </div>
+          <div class="side" id="sideOrbit">
+            <h3>Orbit <span class="pill" id="pillO" style="display:none">cheaper</span></h3>
+            <div class="tot">$<span id="oTot"></span><small>/day</small></div>
+            <div class="line"><span>Amortised capex</span><span>$<span id="oAmort"></span></span></div>
+            <div class="line"><span>Result downlink</span><span>$<span id="oStation"></span></span></div>
+            <div class="line"><span>Total capex</span><span>$<span id="oCapex"></span></span></div>
+            <div class="line"><span>Data reduction</span><span><span id="oRed"></span>×</span></div>
+          </div>
+        </div>
+
+        <div class="cross">
+          <h3>Cost vs data volume</h3>
+          <div class="hint">Ground scales with every GB you must bring down. Orbit is mostly fixed capex. Where they cross is your decision point.</div>
+          <canvas id="chart" height="260"></canvas>
+          <div class="legend">
+            <span><span class="dot" style="background:#4da3ff"></span>Ground (station + cloud)</span>
+            <span><span class="dot" style="background:#6ee7b7"></span>Orbit (amortised + result)</span>
+            <span><span class="dot" style="background:rgba(255,107,107,.55)"></span>Ground physically impossible</span>
+            <span><span class="dot" style="background:#ffb84d"></span>You are here</span>
+          </div>
+        </div>
+
+        <div class="note" id="note"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const $=id=>document.getElementById(id);
+const LINK_EFF=0.80, CLOUD_TOPS=250, UTIL=0.40;
+
+function fmtM(v){
+  if(!isFinite(v))return '∞';
+  if(v>=1e6)return (v/1e6).toFixed(1)+'M';
+  if(v>=1000)return v.toLocaleString(undefined,{maximumFractionDigits:0});
+  if(v>=10)return v.toFixed(0);
+  return v.toFixed(2);
+}
+function fmtX(v){
+  if(!isFinite(v))return '∞';
+  if(v>=1000)return Math.round(v).toLocaleString();
+  if(v>=10)return v.toFixed(0);
+  return v.toFixed(1);
+}
+
+// ---- model: mirrors orbitplan.placement ----
+function groundCost(gb, gops, nInf, rate, gsMin, gpuHr){
+  const hours = gb*1e9*8/(rate*LINK_EFF)/3600;
+  const station = hours*60*gsMin;
+  const ops = nInf*gops*1e9;
+  const cloud = ops/(CLOUD_TOPS*1e12*UTIL)/3600*gpuHr;
+  return {hours, station, cloud, total:station+cloud};
+}
+function orbitCost(massKg, hwUsd, lcKg, years, outGb, rate, gsMin){
+  const capex = massKg*lcKg + hwUsd;
+  const amort = capex/(years*365);
+  const minutes = outGb*1e9*8/(rate*LINK_EFF)/60;
+  const station = minutes*gsMin;
+  return {capex, amort, station, total:amort+station};
+}
+
+function compute(){
+  const gb=+$('gen').value, gops=+$('wl').value,
+        inmb=+$('inmb').value, outmb=+$('outmb').value,
+        rate=+$('band').value, passes=+$('pass').value, con=+$('con').value,
+        gsMin=+$('gs').value, massKg=+$('mass').value, hwUsd=+$('hw').value*1000,
+        lcKg=+$('lc').value, years=+$('yr').value, gpuHr=+$('gpu').value,
+        sov=$('sov').checked;
+
+  $('genV').textContent=gb.toLocaleString(); $('inV').textContent=inmb;
+  $('outV').textContent=outmb<1?outmb.toFixed(3):outmb;
+  $('passV').textContent=passes; $('conV').textContent=con;
+  $('gsV').textContent=gsMin; $('massV').textContent=massKg;
+  $('hwV').textContent=+$('hw').value; $('lcV').textContent=lcKg;
+  $('yrV').textContent=years; $('gpuV').textContent=gpuHr.toFixed(3);
+
+  const nInf = gb*1000/inmb;
+  const outGb = nInf*outmb/1000;
+  const g = groundCost(gb,gops,nInf,rate,gsMin,gpuHr);
+  const o = orbitCost(massKg,hwUsd,lcKg,years,outGb,rate,gsMin);
+  const avail = con*passes/60;
+  const feasible = g.hours<=avail;
+  const reduction = outmb>0 ? inmb/outmb : Infinity;
+
+  // fill panels
+  $('gTot').textContent=fmtM(g.total); $('gStation').textContent=fmtM(g.station);
+  $('gCloud').textContent=fmtM(g.cloud); $('gHours').textContent=g.hours.toFixed(2);
+  $('gAvail').textContent=avail.toFixed(2);
+  $('gHoursLine').className='line'+(feasible?'':' bad');
+  $('oTot').textContent=fmtM(o.total); $('oAmort').textContent=fmtM(o.amort);
+  $('oStation').textContent=fmtM(o.station); $('oCapex').textContent=fmtM(o.capex);
+  $('oRed').textContent=fmtX(reduction);
+
+  const orbitWins = sov || !feasible || o.total<g.total;
+  $('sideOrbit').className='side'+(orbitWins?' win':'');
+  $('sideGround').className='side'+(orbitWins?'':' win');
+  $('pillO').style.display=orbitWins?'':'none';
+  $('pillG').style.display=orbitWins?'none':'';
+
+  // verdict
+  const v=$('verdict');
+  if(sov){
+    v.className='verdict v-forced';
+    v.innerHTML='<span class="tag">orbit — by constraint</span><br>'
+      +`The raw data may not transit third-party ground stations, so processing onboard is the only compliant option. `
+      +(o.total>g.total
+        ? `It costs <b>${(o.total/g.total).toFixed(1)}× more</b> ($${fmtM(o.total)} vs $${fmtM(g.total)}/day) — that's the compliance premium.`
+        : `It also happens to be <b>${(g.total/o.total).toFixed(1)}× cheaper</b>.`);
+  } else if(!feasible){
+    v.className='verdict v-impossible';
+    v.innerHTML='<span class="tag">orbit — ground is impossible</span><br>'
+      +`Downlinking <b>${gb.toLocaleString()} GB/day</b> needs <b>${g.hours.toFixed(1)} h</b> of contact against <b>${avail.toFixed(2)} h</b> available. `
+      +`The data physically cannot come down. Onboard processing isn't cheaper — it's the only option that exists.`;
+  } else if(o.total<g.total){
+    v.className='verdict v-orbit';
+    v.innerHTML='<span class="tag">orbit wins</span><br>'
+      +`<b>${(g.total/o.total).toFixed(1)}× cheaper.</b> Ground-station minutes to bring ${gb.toLocaleString()} GB/day down `
+      +`(<b>$${fmtM(g.station)}/day</b>) dominate everything else.`;
+  } else {
+    v.className='verdict v-ground';
+    v.innerHTML='<span class="tag">ground wins</span><br>'
+      +`<b>${(o.total/g.total).toFixed(1)}× cheaper.</b> At ${gb.toLocaleString()} GB/day there isn't enough data to justify `
+      +`amortising <b>$${fmtM(o.capex)}</b> of hardware and launch. Downlink it and use the cloud.`;
+  }
+
+  draw(gops,inmb,outmb,rate,passes,con,gsMin,massKg,hwUsd,lcKg,years,gpuHr,gb,avail);
+
+  $('note').innerHTML=`Ground = station minutes to downlink <b>all</b> raw data + cloud GPU time. `
+    +`Orbit = (launch ${massKg} kg × $${lcKg}/kg + $${fmtM(hwUsd)} hardware) ÷ ${years} yr, plus downlinking only the ${fmtM(outGb)} GB/day result. `
+    +`Contact available = ${passes} passes × ${con} min. `
+    +`Prices are public list rates and overridable — AWS Ground Station wideband and an EC2 g5.xlarge-class GPU. `
+    +`Mirrors <code>orbitplan.compare_placement()</code>; first-order triage, not a procurement quote.`;
+}
+
+function draw(gops,inmb,outmb,rate,passes,con,gsMin,massKg,hwUsd,lcKg,years,gpuHr,curGb,avail){
+  const c=$('chart'), dpr=window.devicePixelRatio||1;
+  const W=c.clientWidth,H=260;
+  c.width=W*dpr;c.height=H*dpr;const ctx=c.getContext('2d');ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+  const padL=58,padR=14,padT=14,padB=32,pw=W-padL-padR,ph=H-padT-padB;
+  const maxGb=Math.max(curGb*2,50);
+  const N=140;
+  let pts=[];let maxCost=0;
+  for(let i=0;i<=N;i++){
+    const gb=Math.max(maxGb*i/N,0.01);
+    const n=gb*1000/inmb;
+    const g=groundCost(gb,gops,n,rate,gsMin,gpuHr);
+    const o=orbitCost(massKg,hwUsd,lcKg,years,n*outmb/1000,rate,gsMin);
+    const feas=g.hours<=avail;
+    pts.push({gb,g:g.total,o:o.total,feas});
+    maxCost=Math.max(maxCost,g.total,o.total);
+  }
+  maxCost=Math.max(maxCost,1);
+  const x=gb=>padL+(gb/maxGb)*pw, y=v=>padT+ph-Math.min(v/maxCost,1)*ph;
+
+  // impossible region shading
+  const firstBad=pts.find(p=>!p.feas);
+  if(firstBad){
+    ctx.fillStyle='rgba(255,107,107,.09)';
+    ctx.fillRect(x(firstBad.gb),padT,pw-(x(firstBad.gb)-padL),ph);
+    ctx.strokeStyle='rgba(255,107,107,.5)';ctx.setLineDash([4,4]);
+    ctx.beginPath();ctx.moveTo(x(firstBad.gb),padT);ctx.lineTo(x(firstBad.gb),padT+ph);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#ff6b6b';ctx.font='10px sans-serif';
+    ctx.fillText('ground impossible →',x(firstBad.gb)+5,padT+11);
+  }
+  // grid
+  ctx.strokeStyle='#233047';ctx.fillStyle='#8b9ab5';ctx.font='11px sans-serif';ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){const v=maxCost*i/4,yy=y(v);
+    ctx.beginPath();ctx.moveTo(padL,yy);ctx.lineTo(W-padR,yy);ctx.stroke();
+    ctx.fillText('$'+fmtM(v),4,yy+3);}
+  for(let i=0;i<=4;i++){const gb=maxGb*i/4;ctx.fillText(fmtM(gb),x(gb)-10,H-12);}
+  ctx.fillText('GB/day',W-padR-46,H-12);
+
+  const line=(key,col)=>{ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();
+    pts.forEach((p,i)=>{const xx=x(p.gb),yy=y(p[key]);i?ctx.lineTo(xx,yy):ctx.moveTo(xx,yy);});ctx.stroke();};
+  line('g','#4da3ff'); line('o','#6ee7b7');
+
+  // crossover marker
+  for(let i=1;i<pts.length;i++){
+    if((pts[i-1].g-pts[i-1].o)*(pts[i].g-pts[i].o)<0){
+      ctx.strokeStyle='rgba(255,255,255,.35)';ctx.setLineDash([3,3]);
+      ctx.beginPath();ctx.moveTo(x(pts[i].gb),padT);ctx.lineTo(x(pts[i].gb),padT+ph);ctx.stroke();
+      ctx.setLineDash([]);ctx.fillStyle='#8b9ab5';ctx.font='10px sans-serif';
+      ctx.fillText('crossover '+fmtM(pts[i].gb)+' GB',x(pts[i].gb)+5,padT+ph-6);
+      break;
+    }
+  }
+  // current point
+  const n=curGb*1000/inmb;
+  const gNow=groundCost(curGb,gops,n,rate,gsMin,gpuHr).total;
+  const oNow=orbitCost(massKg,hwUsd,lcKg,years,n*outmb/1000,rate,gsMin).total;
+  ctx.fillStyle='#ffb84d';
+  [gNow,oNow].forEach(v=>{ctx.beginPath();ctx.arc(x(curGb),y(v),4.5,0,7);ctx.fill();});
+}
+
+const SCEN={
+  sar:  {gen:1728, wl:'200', inmb:800, outmb:2,    band:'300e6', pass:5, con:8, gs:10, mass:25, hw:40, lc:1000, yr:5, sov:false},
+  cube: {gen:5,    wl:'8',   inmb:6,   outmb:0.005,band:'300e6', pass:5, con:8, gs:10, mass:25, hw:40, lc:1000, yr:5, sov:false},
+  sov:  {gen:5,    wl:'8',   inmb:6,   outmb:0.005,band:'300e6', pass:5, con:8, gs:10, mass:25, hw:40, lc:1000, yr:5, sov:true},
+  video:{gen:900,  wl:'80',  inmb:6,   outmb:0.01, band:'1.2e9', pass:8, con:10,gs:10, mass:40, hw:60, lc:1000, yr:5, sov:false},
+};
+document.querySelectorAll('.presetbar button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    const s=SCEN[b.dataset.p]; if(!s)return;
+    for(const k in s){
+      const el=$(k); if(!el)continue;
+      if(el.type==='checkbox') el.checked=s[k]; else el.value=s[k];
+    }
+    compute();
+  });
+});
+['gen','wl','inmb','outmb','band','pass','con','gs','mass','hw','lc','yr','gpu','sov']
+  .forEach(i=>{const el=$(i);if(el){el.addEventListener('input',compute);el.addEventListener('change',compute);}});
+window.addEventListener('resize',compute);
+compute();
+</script>
+</body>
+</html>
