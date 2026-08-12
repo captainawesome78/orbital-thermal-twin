@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sizing AI for Orbit — workbook and facilitator kit</title>
+<style>
+  :root{
+    --bg:#0a0e1a; --panel:#121829; --panel2:#0f1422; --line:#233047;
+    --txt:#e6edf7; --muted:#8b9ab5; --accent:#4da3ff; --accent2:#6ee7b7;
+    --warn:#ffb84d; --bad:#ff6b6b; --good:#4ade80;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;padding:20px 24px 48px;max-width:1200px;margin:0 auto}
+  nav{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:20px;padding-bottom:0;flex-wrap:wrap}
+  nav a{color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;padding:9px 15px;border-radius:8px 8px 0 0;border:1px solid transparent;border-bottom:none;position:relative;top:1px}
+  nav a:hover{color:var(--txt)}
+  nav a.active{color:var(--accent);background:var(--panel);border-color:var(--line)}
+  h1{font-size:22px;font-weight:650;letter-spacing:-.2px}
+  h1 .sub{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-top:4px}
+  .free{background:rgba(110,231,183,.07);border:1px solid rgba(110,231,183,.35);border-radius:14px;padding:16px 18px;margin-top:20px;font-size:14px}
+  .free b{color:var(--accent2)}
+  .free a{color:var(--accent2)}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}
+  @media(max-width:860px){.cards{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;flex-direction:column}
+  .card.feature{border-color:rgba(77,163,255,.45)}
+  .tag{font-size:11px;text-transform:uppercase;letter-spacing:.9px;color:var(--muted);font-weight:600}
+  .card h2{font-size:19px;font-weight:650;margin:8px 0 2px}
+  .price{font-size:34px;font-weight:700;font-variant-numeric:tabular-nums;margin:10px 0 2px}
+  .price span{font-size:13px;font-weight:400;color:var(--muted)}
+  .who{font-size:13px;color:var(--muted);margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:14px}
+  ul{list-style:none;font-size:13.5px;margin-bottom:18px}
+  li{padding:5px 0 5px 20px;position:relative}
+  li:before{content:"";position:absolute;left:0;top:12px;width:7px;height:7px;border-radius:2px;background:var(--accent)}
+  .card.feature li:before{background:var(--accent2)}
+  .btn{display:block;text-align:center;background:var(--accent);color:#04122b;text-decoration:none;font-weight:650;font-size:14px;padding:12px;border-radius:10px;margin-top:auto}
+  .btn:hover{filter:brightness(1.08)}
+  .btn.alt{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+  h3{font-size:15px;font-weight:650;margin:28px 0 8px}
+  p{font-size:13.5px;color:var(--muted);margin-bottom:10px;max-width:78ch}
+  p strong{color:var(--txt);font-weight:600}
+  .scope{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-top:24px}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+  .foot{font-size:12px;color:var(--muted);margin-top:32px;border-top:1px solid var(--line);padding-top:14px}
+  .foot a{color:var(--accent)}
+</style>
+</head>
+<body>
+  <nav>
+    <a href="index.html">Thermal Twin</a>
+    <a href="planner.html">Feasibility Planner</a>
+    <a href="placement.html">Orbit or Ground?</a>
+    <a href="https://github.com/captainawesome78/orbital-ai-labs" target="_blank" rel="noopener">Course ↗</a>
+    <a href="buy.html" class="active">Buy</a>
+  </nav>
+
+  <h1>Sizing AI for Orbit
+    <span class="sub">Work out whether an AI workload closes in orbit — and whether it should.</span>
+  </h1>
+
+  <div class="free">
+    <b>Read the free labs first.</b> The five-lab curriculum is public and Apache-2.0 at
+    <a href="https://github.com/captainawesome78/orbital-ai-labs" target="_blank" rel="noopener">github.com/captainawesome78/orbital-ai-labs</a>,
+    and the three Python packages — <code>orbitherm</code>, <code>orbitplan</code>, <code>radshield</code> —
+    are free on PyPI and stay free. Everything below is what the free version deliberately leaves out.
+    If the labs are enough for you, they're enough. That's fine.
+  </div>
+
+  <div class="cards">
+
+    <div class="card feature">
+      <div class="tag">For engineers</div>
+      <h2>Self-Paced Workbook</h2>
+      <div class="price">$49</div>
+      <div class="who">About four hours of work. Python 3.10+, no spaceflight background needed.</div>
+      <ul>
+        <li><b>Six executable notebooks</b> — thermal, power and compute, downlink and laser mesh, placement economics, radiation, plus a capstone</li>
+        <li><b>Worked solutions to all thirteen exercises</b>, with the reasoning rather than just the answer</li>
+        <li><b>Mission workbook</b> — fill in one cell with your own mission, get all five budgets</li>
+        <li><b>Report generator</b> — produces a client-ready feasibility write-up with sensitivity and honest-risk sections</li>
+        <li><b>A self-check script</b>, so you can confirm every cell runs before trusting any of it</li>
+      </ul>
+      <a class="btn" id="buy-workbook" href="https://gumroad.com/" target="_blank" rel="noopener">Get the workbook — $49</a>
+    </div>
+
+    <div class="card">
+      <div class="tag">For whoever teaches it</div>
+      <h2>Facilitator Kit</h2>
+      <div class="price">$399</div>
+      <div class="who">Everything needed to run this as a two-day workshop. Includes the workbook above for your attendees.</div>
+      <ul>
+        <li><b>22-slide deck</b> (.pptx), built around five results that survive scrutiny</li>
+        <li><b>Timed two-day syllabus</b>, mapped module by module</li>
+        <li><b>Instructor notes</b> — what to run live, the pushback you'll get, and where the tooling has warts you should disclose first</li>
+        <li><b>Red-team exercise</b> — five feasibility claims, three flawed and two sound, with a full answer key</li>
+        <li><b>Teaching licence</b> — deliver it commercially, unlimited times, rebrand it, hand the participant material out</li>
+      </ul>
+      <a class="btn alt" id="buy-kit" href="https://gumroad.com/" target="_blank" rel="noopener">Get the facilitator kit — $399</a>
+    </div>
+
+  </div>
+
+  <h3>Why the solutions are the thing you're actually buying</h3>
+  <p>
+    Four of the thirteen exercises don't have the answer the lab text implies, and those four are the
+    most useful pages in the bundle. The sun-facing radiator penalty is <strong>3.06×</strong>, not the
+    2× stated. One exercise has <strong>no answer at all</strong> — the bottleneck you're told to chase
+    never becomes binding, because a third constraint overtakes it first. Weight repair
+    <strong>never fails</strong>, because it's a full restore rather than error correction, which means
+    the real limits are somewhere else entirely. And the package's own crossover figure is
+    operating-point dependent and disagrees with itself; the workbook shows you how to get the right
+    number.
+  </p>
+  <p>
+    Every figure in the material is computed by the packages and re-checked against a fresh install.
+    Every code block runs in continuous integration weekly, so nothing silently rots when a package
+    updates.
+  </p>
+
+  <div class="scope">
+    <h3 style="margin-top:0">Honest scope</h3>
+    <p>
+      These are first-order models with public default parameters. They'll kill a bad architecture
+      cheaply and make sure the expensive analysis starts from the right question. They are
+      <strong>not</strong> a substitute for detailed thermal analysis with real geometry, full orbital
+      mechanics including beta-angle variation, link budgets with real antenna patterns and margin, or
+      radiation qualification against your actual parts.
+    </p>
+    <p>
+      Default cost figures are public list rates and they date within months. Override every one of
+      them before quoting a result to anyone.
+    </p>
+    <p style="margin-bottom:0">
+      <strong>30-day refund, no questions.</strong> If it isn't useful, say so and get your money back.
+    </p>
+  </div>
+
+  <div class="foot">
+    Shaik Naveed · <a href="mailto:mailmenaveed88@gmail.com">mailmenaveed88@gmail.com</a> ·
+    <a href="https://github.com/captainawesome78" target="_blank" rel="noopener">github.com/captainawesome78</a><br>
+    Running this for a team instead? Two-day private workshops are available —
+    <a href="https://github.com/captainawesome78/orbital-ai-labs#corporate-delivery" target="_blank" rel="noopener">details here</a>.
+  </div>
+</body>
+</html>
